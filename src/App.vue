@@ -13,6 +13,7 @@ const checkWords = () => {
     .map((line) => line.replace(/\s+/g, ' ').trim())
     .filter((line) => line.length > 0)
     .join('\n')
+
   const wordsArray = words.value.split(/\s+/)
   highlightedText.value = text.value
   result.value = wordsArray.map((word) => word.trim()).filter((word) => word.length > 0)
@@ -32,6 +33,7 @@ const copyNotFoundWordsToClipboard = () => {
 }
 
 const selectWordsInText = (word) => {
+  highlightedText.value = text.value
   let textContent = text.value
   const regex = new RegExp(word, 'gi')
 
@@ -54,21 +56,11 @@ const filteredWords = computed(() => {
 
   <main>
     <div class="text-area">
-      <textarea
-        v-model="text"
-        rows="10"
-        cols="50"
-        placeholder="Вставь текст сюда"
-        @change="checkWords"
-      ></textarea>
-      <textarea
-        v-model="words"
-        rows="10"
-        cols="50"
-        placeholder="Вставь слова сюда"
-        @change="checkWords"
-      ></textarea>
+      <textarea v-model="text" rows="10" cols="50" placeholder="Вставь текст сюда"></textarea>
+      <textarea v-model="words" rows="10" cols="50" placeholder="Вставь слова сюда"></textarea>
     </div>
+
+    <button @click="checkWords">Проверить слова</button>
 
     <div v-if="result.length" class="result">
       <h2>Результат:</h2>
@@ -90,16 +82,28 @@ const filteredWords = computed(() => {
               <label for="not-found">Не найденные слова</label>
             </div>
           </div>
-          <p
-            class="word"
-            v-for="(word, index) in filteredWords"
-            :key="index"
-            @mouseover="selectWordsInText(word)"
-            @mouseleave="highlightedText = text"
-          >
-            {{ word }} -
-            {{ text.toLowerCase().includes(word.toLowerCase()) ? 'Найдено' : 'Не найдено' }}
-          </p>
+
+          <div v-if="filter === 'all'">
+            <p
+              class="word"
+              v-for="(word, index) in filteredWords"
+              :key="index"
+              @click="selectWordsInText(word)"
+            >
+              {{ word }} -
+              {{ text.toLowerCase().includes(word.toLowerCase()) ? 'Найдено' : 'Не найдено' }}
+            </p>
+          </div>
+          <div v-else>
+            <p
+              class="word"
+              v-for="(word, index) in filteredWords"
+              :key="index"
+              @click="selectWordsInText(word)"
+            >
+              {{ word }}
+            </p>
+          </div>
         </div>
       </div>
       <button @click="copyNotFoundWordsToClipboard">Скопировать не найденные слова</button>
@@ -129,10 +133,11 @@ main {
 }
 
 textarea {
-  width: 45%;
+  width: 48%;
   height: 200px;
   margin: 10px;
   padding: 10px;
+  resize: none;
   border: 1px solid #ccc;
   border-radius: 10px;
   background-color: #fff;
@@ -140,17 +145,18 @@ textarea {
 
 .result {
   text-align: center;
+  width: 100%;
 }
 
 .output {
   display: flex;
   justify-content: space-between;
-  width: 100%;
+  min-width: 100%;
   padding-bottom: 20px;
 }
 
 .interactive-text {
-  width: 65%;
+  width: 68%;
   padding: 10px;
   text-align: left;
   border: 1px solid #ccc;
@@ -199,17 +205,19 @@ button {
   background-color: #007bff;
   color: white;
   cursor: pointer;
+  margin-bottom: 20px;
 }
 
 button:hover {
   background-color: #0056b3;
+  box-shadow: 4px 4px 8px 0 rgba(0, 123, 255, 0.5);
 }
 button:active {
   background-color: #004085;
+  box-shadow: none;
 }
 button:focus {
   outline: none;
-  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.5);
 }
 
 .filter {
