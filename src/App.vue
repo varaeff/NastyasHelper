@@ -1,11 +1,45 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 
 const text = ref('')
 const words = ref('')
 const result = ref([])
+
 const highlightedText = ref('')
 const filter = ref('all')
+const selectedWord = ref(null)
+
+const isEditModalOpen = ref(false)
+const editWordIndex = ref(null)
+const editWordValue = ref('')
+const editWordFound = ref(false)
+
+const openEditModal = (word, index) => {
+  editWordIndex.value = index
+  editWordValue.value = word
+  isEditModalOpen.value = true
+  checkEditWordFound()
+}
+
+const checkEditWordFound = () => {
+  editWordFound.value = text.value.toLowerCase().includes(editWordValue.value.trim().toLowerCase())
+}
+
+const saveEditWord = () => {
+  if (editWordIndex.value !== null) {
+    result.value.splice(editWordIndex.value, 1, editWordValue.value.trim())
+    isEditModalOpen.value = false
+    editWordIndex.value = null
+    editWordValue.value = ''
+    highlightedText.value = text.value.replace(/\n/g, '<br>')
+  }
+}
+
+const cancelEditWord = () => {
+  isEditModalOpen.value = false
+  editWordIndex.value = null
+  editWordValue.value = ''
+}
 
 const checkWords = () => {
   text.value = text.value
@@ -14,8 +48,12 @@ const checkWords = () => {
     .filter((line) => line.length > 0)
     .join('\n')
 
-  const wordsArray = words.value.split(/\s+/)
-  highlightedText.value = text.value
+  const wordsArray = words.value
+    .replace(/\((m|f|mpl|fpl)\)/gi, '')
+    .split('\n')
+    .map((word) => word.trim())
+    .filter((word) => word.length > 0)
+  highlightedText.value = text.value.replace(/\n/g, '<br>')
   result.value = wordsArray.map((word) => word.trim()).filter((word) => word.length > 0)
 }
 
@@ -33,13 +71,20 @@ const copyNotFoundWordsToClipboard = () => {
 }
 
 const selectWordsInText = (word) => {
-  highlightedText.value = text.value
+  highlightedText.value = text.value.replace(/\n/g, '<br>')
+  selectedWord.value = word
+
   let textContent = text.value
   const regex = new RegExp(word, 'gi')
 
   textContent = textContent.replace(regex, `<span class="highlight">${word}</span>`)
-  highlightedText.value = textContent
+  highlightedText.value = textContent.replace(/\n/g, '<br>')
 }
+
+watch(filter, () => {
+  selectedWord.value = null
+  highlightedText.value = text.value.replace(/\n/g, '<br>')
+})
 
 const filteredWords = computed(() => {
   if (filter.value === 'found') {
@@ -89,6 +134,8 @@ const filteredWords = computed(() => {
               v-for="(word, index) in filteredWords"
               :key="index"
               @click="selectWordsInText(word)"
+              @dblclick="openEditModal(word, result.indexOf(word))"
+              :class="{ selected: selectedWord === word }"
             >
               {{ word }} -
               {{ text.toLowerCase().includes(word.toLowerCase()) ? 'Найдено' : 'Не найдено' }}
@@ -100,6 +147,8 @@ const filteredWords = computed(() => {
               v-for="(word, index) in filteredWords"
               :key="index"
               @click="selectWordsInText(word)"
+              @dblclick="openEditModal(word, result.indexOf(word))"
+              :class="{ selected: selectedWord === word }"
             >
               {{ word }}
             </p>
@@ -107,6 +156,26 @@ const filteredWords = computed(() => {
         </div>
       </div>
       <button @click="copyNotFoundWordsToClipboard">Скопировать не найденные слова</button>
+    </div>
+
+    <div v-if="isEditModalOpen" class="modal-overlay">
+      <div class="modal">
+        <h3 class="modal-element">Редактировать слово</h3>
+        <input
+          class="modal-element modal-input"
+          v-model="editWordValue"
+          @input="checkEditWordFound"
+          @keyup.enter="saveEditWord"
+          autofocus
+        />
+        <div class="modal-element" :style="{ color: editWordFound ? 'green' : 'red' }">
+          {{ editWordFound ? 'Слово найдено в тексте' : 'Слово не найдено в тексте' }}
+        </div>
+        <div class="modal-buttons">
+          <button @click="saveEditWord" :disabled="!editWordValue.trim()">Сохранить</button>
+          <button @click="cancelEditWord">Отмена</button>
+        </div>
+      </div>
     </div>
   </main>
 </template>
@@ -156,21 +225,25 @@ textarea {
 }
 
 .interactive-text {
-  width: 68%;
+  width: 63%;
   padding: 10px;
   text-align: left;
   border: 1px solid #ccc;
   border-radius: 10px;
   background-color: #fff;
+  max-height: 300px;
+  overflow-y: auto;
 }
 
 .words {
-  width: 30%;
+  width: 35%;
   text-align: left;
   padding: 10px;
   border: 1px solid #ccc;
   border-radius: 10px;
   background-color: #fff;
+  max-height: 300px;
+  overflow-y: auto;
 }
 
 .words-label {
@@ -184,6 +257,11 @@ textarea {
 }
 
 .word:hover {
+  font-weight: bold;
+}
+
+.word.selected {
+  background-color: #ffe066;
   font-weight: bold;
 }
 
@@ -230,5 +308,48 @@ button:focus {
 
 .label {
   background-color: #fff;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: #fff;
+  padding: 24px 32px;
+  border-radius: 10px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+  min-width: 300px;
+  text-align: center;
+}
+
+.modal-element {
+  margin-bottom: 10px;
+  background-color: #fff;
+}
+
+.modal-input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background-color: #fff;
+}
+
+.modal-buttons {
+  margin-top: 16px;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  background: #fff;
 }
 </style>
