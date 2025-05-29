@@ -1,6 +1,6 @@
 <script setup>
-import { ref, computed, watch } from 'vue'
-import { checkWords, getRegExp, copyNotFoundWordsToClipboard } from '@/utils'
+import { ref, computed, watch, nextTick } from 'vue'
+import { checkWords, escapeRegExp, getRegExp, copyNotFoundWordsToClipboard } from '@/utils'
 
 const text = ref('')
 const words = ref('')
@@ -9,6 +9,7 @@ const wordsArray = ref([])
 const highlightedText = ref('')
 const filter = ref('all')
 const selectedWord = ref(null)
+const interactiveTextRef = ref(null)
 
 const isEditModalOpen = ref(false)
 const editWordIndex = ref(null)
@@ -39,7 +40,8 @@ const saveEditWord = () => {
 
 const selectWordsInText = (word) => {
   selectedWord.value = word
-  const regex = new RegExp(`(^|\\s)(${word})(?=[\\s.,!?;:])`, 'gi')
+  const escapedWord = escapeRegExp(word.trim())
+  const regex = new RegExp(`(^|[^\\p{L}])(${escapedWord})(?=[\\s.,!?;:]|$|<br>)`, 'giu')
 
   highlightedText.value = text.value
     .replace(/\n/g, '<br>')
@@ -49,6 +51,17 @@ const selectWordsInText = (word) => {
 watch(filter, () => {
   selectedWord.value = null
   highlightedText.value = text.value.replace(/\n/g, '<br>')
+})
+
+watch(highlightedText, async () => {
+  await nextTick()
+  const container = interactiveTextRef.value
+  if (container) {
+    const highlight = container.querySelector('.highlight')
+    if (highlight) {
+      container.scrollTop = highlight.offsetTop - container.offsetTop
+    }
+  }
 })
 
 const filteredWords = computed(() => {
@@ -80,7 +93,7 @@ const filteredWords = computed(() => {
     <div v-if="wordsArray.length" class="result">
       <h2>Результат:</h2>
       <div class="output">
-        <div class="interactive-text" v-html="highlightedText"></div>
+        <div class="interactive-text" v-html="highlightedText" ref="interactiveTextRef"></div>
 
         <div class="words">
           <div class="filter">

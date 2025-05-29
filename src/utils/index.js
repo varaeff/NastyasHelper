@@ -16,9 +16,14 @@ export const checkWords = (text, words) => {
   return [normilizedText, highlightedText, normilizedWords, null]
 }
 
+export const escapeRegExp = (str) => {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 export const getRegExp = (word) => {
-  const pattern = `(^|\\s)${word.toLowerCase()}(?=[\\s.,!?;:])`
-  return new RegExp(pattern, 'gi')
+  const escapedWord = escapeRegExp(word.trim())
+  const pattern = `(^|[^\\p{L}])(${escapedWord})(?=[\\s.,!?;:]|$)`
+  return new RegExp(pattern, 'giu')
 }
 
 export const copyNotFoundWordsToClipboard = (wordsArray, text) => {
