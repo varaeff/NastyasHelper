@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, watch, nextTick } from 'vue'
-import { checkWords, escapeRegExp, getRegExp, copyNotFoundWordsToClipboard } from '@/utils'
+import { checkWords, escapeRegExp, getRegExp, copyWordsToClipboard } from '@/utils'
 
 const text = ref('')
 const words = ref('')
@@ -9,7 +9,9 @@ const wordsArray = ref([])
 const highlightedText = ref('')
 const filter = ref('all')
 const selectedWord = ref(null)
+const selectedNum = ref(1)
 const interactiveTextRef = ref(null)
+const foundCount = ref(0)
 
 const isEditModalOpen = ref(false)
 const editWordIndex = ref(null)
@@ -40,12 +42,30 @@ const saveEditWord = () => {
 
 const selectWordsInText = (word) => {
   selectedWord.value = word
+  selectedNum.value = 1
   const escapedWord = escapeRegExp(word.trim())
   const regex = new RegExp(`(^|[^\\p{L}])(${escapedWord})(?=[\\s.,!?;:]|$|<br>)`, 'giu')
+
+  const matches = text.value.replace(/\n/g, '<br>').match(regex) || []
+  foundCount.value = matches.length
 
   highlightedText.value = text.value
     .replace(/\n/g, '<br>')
     .replace(regex, `$1<span class="highlight">$2</span>`)
+}
+
+const scrollToSelectedHighlight = () => {
+  nextTick(() => {
+    const container = interactiveTextRef.value
+    if (container) {
+      const highlights = container.querySelectorAll('.highlight')
+      const idx = Math.max(0, Math.min(selectedNum.value - 1, highlights.length - 1))
+      const highlight = highlights[idx]
+      if (highlight) {
+        container.scrollTop = highlight.offsetTop - container.offsetTop
+      }
+    }
+  })
 }
 
 watch(filter, () => {
@@ -53,15 +73,8 @@ watch(filter, () => {
   highlightedText.value = text.value.replace(/\n/g, '<br>')
 })
 
-watch(highlightedText, async () => {
-  await nextTick()
-  const container = interactiveTextRef.value
-  if (container) {
-    const highlight = container.querySelector('.highlight')
-    if (highlight) {
-      container.scrollTop = highlight.offsetTop - container.offsetTop
-    }
-  }
+watch(highlightedText, () => {
+  scrollToSelectedHighlight()
 })
 
 const filteredWords = computed(() => {
@@ -111,20 +124,35 @@ const filteredWords = computed(() => {
             </div>
           </div>
 
-          <p
-            class="word"
-            v-for="(word, index) in filteredWords"
-            :key="index"
-            @click="selectWordsInText(word)"
-            @dblclick="openEditModal(word, wordsArray.indexOf(word))"
-            :class="{ selected: selectedWord === word }"
-          >
-            {{ word }}
-          </p>
+          <div class="words_list" v-for="(word, index) in filteredWords" :key="index">
+            <p
+              class="word"
+              @click="selectWordsInText(word)"
+              @dblclick="openEditModal(word, wordsArray.indexOf(word))"
+              :class="{ selected: selectedWord === word }"
+            >
+              {{ word }}
+            </p>
+            <button
+              @click="
+                () => {
+                  selectedNum === foundCount ? (selectedNum = 1) : selectedNum++
+                  scrollToSelectedHighlight()
+                }
+              "
+              class="inline_button"
+              v-if="foundCount > 1 && selectedWord === word"
+            >
+              {{ selectedNum }}/{{ foundCount }} ▼
+            </button>
+          </div>
         </div>
       </div>
-      <button @click="copyNotFoundWordsToClipboard(wordsArray, text)">
+      <button class="margin" @click="copyWordsToClipboard(wordsArray, text, false)">
         Скопировать не найденные слова
+      </button>
+      <button @click="copyWordsToClipboard(wordsArray, text, true)">
+        Скопировать найденные слова
       </button>
     </div>
 
@@ -237,6 +265,14 @@ textarea {
   font-weight: bold;
 }
 
+.words_list {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  height: 1.2rem;
+  background-color: #fff;
+}
+
 ::v-deep(.highlight) {
   font-weight: bold;
   background-color: yellow;
@@ -268,6 +304,24 @@ button:active {
 }
 button:focus {
   outline: none;
+}
+
+.margin {
+  margin-right: 20px;
+}
+
+.inline_button {
+  height: 1.4rem;
+  background-color: #f0f0f0;
+  color: #333;
+  border: none;
+  padding: 2px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.inline_button:hover {
+  color: #fff;
 }
 
 .filter {

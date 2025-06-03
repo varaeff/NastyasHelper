@@ -26,16 +26,16 @@ export const getRegExp = (word) => {
   return new RegExp(pattern, 'giu')
 }
 
-export const copyNotFoundWordsToClipboard = (wordsArray, text) => {
-  const notFoundWords = wordsArray.filter((word) => {
+export const copyWordsToClipboard = (wordsArray, text, found) => {
+  const wordsToReturn = wordsArray.filter((word) => {
     const regex = getRegExp(word)
-    return !regex.test(text)
+    return found ? regex.test(text) : !regex.test(text)
   })
-  if (notFoundWords.length > 0) {
-    navigator.clipboard.writeText(notFoundWords.join('\n')).then(() => {
-      alert('Не найденные слова скопированы в буфер обмена!')
+  if (wordsToReturn.length > 0) {
+    navigator.clipboard.writeText(wordsToReturn.join('\n')).then(() => {
+      alert('Слова скопированы в буфер обмена!')
     })
   } else {
-    alert('Все слова найдены!')
+    alert('Нет слов для копирования!')
   }
 }
