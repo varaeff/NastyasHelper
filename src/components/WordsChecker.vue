@@ -133,18 +133,31 @@ const filteredWords = computed(() => {
             >
               {{ word }}
             </p>
-            <button
-              @click="
-                () => {
-                  selectedNum === foundCount ? (selectedNum = 1) : selectedNum++
-                  scrollToSelectedHighlight()
-                }
-              "
-              class="inline_button"
-              v-if="foundCount > 1 && selectedWord === word"
-            >
-              {{ selectedNum }}/{{ foundCount }} ▼
-            </button>
+            <div v-if="foundCount > 1 && selectedWord === word" class="inline_buttons">
+              <p class="counter">{{ selectedNum }}/{{ foundCount }}</p>
+              <button
+                @click="
+                  () => {
+                    selectedNum === foundCount ? (selectedNum = 1) : selectedNum++
+                    scrollToSelectedHighlight()
+                  }
+                "
+                class="inline_button"
+              >
+                ▼
+              </button>
+              <button
+                @click="
+                  () => {
+                    selectedNum === 1 ? (selectedNum = foundCount) : selectedNum--
+                    scrollToSelectedHighlight()
+                  }
+                "
+                class="inline_button"
+              >
+                ▲
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -310,8 +323,23 @@ button:focus {
   margin-right: 20px;
 }
 
+.inline_buttons {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  background-color: #fff;
+}
+
+.counter {
+  margin-right: 5px;
+  background-color: #fff;
+}
+
 .inline_button {
   height: 1.4rem;
+  margin-right: 5px;
+  margin-bottom: 0;
   background-color: #f0f0f0;
   color: #333;
   border: none;
