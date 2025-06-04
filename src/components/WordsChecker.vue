@@ -2,6 +2,8 @@
 import { ref, computed, watch, nextTick } from 'vue'
 import { checkWords, escapeRegExp, getRegExp, copyWordsToClipboard } from '@/utils'
 
+const workType = ref('text')
+
 const text = ref('')
 const words = ref('')
 const wordsArray = ref([])
@@ -76,6 +78,16 @@ watch(highlightedText, () => {
   scrollToSelectedHighlight()
 })
 
+watch(workType, () => {
+  text.value = ''
+  words.value = ''
+  wordsArray.value = []
+  highlightedText.value = ''
+  selectedWord.value = null
+  selectedNum.value = 1
+  foundCount.value = 0
+})
+
 const filteredWords = computed(() => {
   if (filter.value === 'found' || filter.value === 'not-found') {
     return wordsArray.value.filter((word) => {
@@ -90,36 +102,65 @@ const filteredWords = computed(() => {
 </script>
 
 <template>
-  <header>Проверка наличия слов в тексте</header>
-
   <main>
-    <div class="text-area">
-      <textarea v-model="text" rows="10" cols="50" placeholder="Вставь текст сюда"></textarea>
-      <textarea v-model="words" rows="10" cols="50" placeholder="Вставь слова сюда"></textarea>
+    <div class="work-selector">
+      <div class="margin">
+        <input class="radio" type="radio" id="text" value="text" v-model="workType" />
+        <label for="text">Manuscript check</label>
+      </div>
+      <div>
+        <input class="radio" type="radio" id="voc" value="voc" v-model="workType" />
+        <label for="voc">Word list check</label>
+      </div>
+    </div>
+    <h1>{{ workType === 'text' ? 'Manuscript check' : 'Word list check' }}</h1>
+    <div class="text-areas">
+      <div class="textarea-container">
+        <h2>{{ workType === 'text' ? 'Manuscript' : 'Glossary list' }}</h2>
+        <textarea
+          v-model="text"
+          rows="10"
+          cols="50"
+          :placeholder="workType === 'text' ? 'Insert your text here' : 'insert Glossary list here'"
+        ></textarea>
+      </div>
+      <div class="textarea-container">
+        <h2>{{ workType === 'text' ? 'Word list' : 'Core Vocabulary list' }}</h2>
+        <textarea
+          v-model="words"
+          rows="10"
+          cols="50"
+          :placeholder="
+            workType === 'text' ? 'Insert your word list here' : 'insert Core Vocabulary list here'
+          "
+        ></textarea>
+      </div>
     </div>
 
-    <button @click="[text, highlightedText, wordsArray, selectedWord] = checkWords(text, words)">
-      Проверить слова
+    <button
+      @click="[text, highlightedText, wordsArray, selectedWord] = checkWords(text, words, workType)"
+    >
+      Check
     </button>
 
     <div v-if="wordsArray.length" class="result">
-      <h2>Результат:</h2>
-      <div class="output">
+      <h2>Results</h2>
+      <div :class="['output', workType === 'voc' ? 'equal' : '']">
         <div class="interactive-text" v-html="highlightedText" ref="interactiveTextRef"></div>
 
         <div class="words">
           <div class="filter">
             <div class="label">
-              <input type="radio" id="all" value="all" v-model="filter" />
-              <label for="all">Все слова</label>
+              <input class="radio" type="radio" id="all" value="all" v-model="filter" />
+              <label class="label" for="all">All words</label>
             </div>
             <div class="label">
-              <input type="radio" id="found" value="found" v-model="filter" />
-              <label for="found">Найденные слова</label>
+              <input class="radio" type="radio" id="found" value="found" v-model="filter" />
+              <label class="label" for="found">Found words</label>
             </div>
             <div class="label">
-              <input type="radio" id="not-found" value="not-found" v-model="filter" />
-              <label for="not-found">Не найденные слова</label>
+              <input class="radio" type="radio" id="not-found" value="not-found" v-model="filter" />
+              <label class="label" for="not-found">Not found words</label>
             </div>
           </div>
 
@@ -161,16 +202,14 @@ const filteredWords = computed(() => {
         </div>
       </div>
       <button class="margin" @click="copyWordsToClipboard(wordsArray, text, false)">
-        Скопировать не найденные слова
+        Copy not found words
       </button>
-      <button @click="copyWordsToClipboard(wordsArray, text, true)">
-        Скопировать найденные слова
-      </button>
+      <button @click="copyWordsToClipboard(wordsArray, text, true)">Copy found words</button>
     </div>
 
     <div v-if="isEditModalOpen" class="modal-overlay">
       <div class="modal">
-        <h3 class="modal-element">Редактировать слово</h3>
+        <h3 class="modal-element">Edit word</h3>
         <input
           class="modal-element modal-input"
           v-model="editWordValue"
@@ -179,12 +218,12 @@ const filteredWords = computed(() => {
           autofocus
         />
         <div class="modal-element" :style="{ color: editWordFound ? 'green' : 'red' }">
-          {{ editWordFound ? 'Слово найдено в тексте' : 'Слово не найдено в тексте' }}
+          {{ editWordFound ? 'Found' : 'Not found' }}
         </div>
         <div class="modal-buttons">
-          <button @click="saveEditWord" :disabled="!editWordValue.trim()">Сохранить</button>
+          <button @click="saveEditWord" :disabled="!editWordValue.trim()">Save</button>
           <button @click="[isEditModalOpen, editWordIndex, editWordValue] = [false, null, '']">
-            Отмена
+            Cancel
           </button>
         </div>
       </div>
@@ -193,19 +232,30 @@ const filteredWords = computed(() => {
 </template>
 
 <style lang="scss" scoped>
-header {
-  font-size: 1.5rem;
-  font-weight: bold;
-  text-align: center;
-}
-
 main {
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-.text-area {
+.radio {
+  margin-right: 5px;
+  transform: translateY(2px);
+}
+
+.work-selector {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  margin-right: auto;
+  margin-bottom: 20px;
+}
+
+h1 {
+  margin-bottom: 20px;
+}
+
+.text-areas {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -213,10 +263,17 @@ main {
   margin-bottom: 21px;
 }
 
-textarea {
+.textarea-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   width: 48%;
+}
+
+textarea {
+  width: 100%;
   height: 200px;
-  margin: 10px;
+  margin: 0;
   padding: 10px;
   resize: none;
   border: 1px solid $border-color;

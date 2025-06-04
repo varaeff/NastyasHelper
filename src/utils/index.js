@@ -1,4 +1,4 @@
-export const checkWords = (text, words) => {
+export const checkWords = (text, words, workType) => {
   const normilizedText = text
     .split('\n')
     .map((line) => line.replace(/\s+/g, ' ').trim())
@@ -7,11 +7,17 @@ export const checkWords = (text, words) => {
 
   const highlightedText = normilizedText.replace(/\n/g, '<br>')
 
-  const normilizedWords = words
-    .replace(/\((m|f|mpl|fpl)\)/gi, '')
-    .split('\n')
-    .map((word) => word.trim())
-    .filter((word) => word.length > 0)
+  const normilizedWords =
+    workType === 'text'
+      ? words
+          .replace(/\((m|f|mpl|fpl)\)/gi, '')
+          .split('\n')
+          .map((word) => word.trim())
+          .filter((word) => word.length > 0)
+      : words
+          .split('\n')
+          .map((word) => word.trim())
+          .filter((word) => word.length > 0)
 
   return [normilizedText, highlightedText, normilizedWords, null]
 }
@@ -22,7 +28,7 @@ export const escapeRegExp = (str) => {
 
 export const getRegExp = (word) => {
   const escapedWord = escapeRegExp(word.trim())
-  const pattern = `(^|[^\\p{L}])(${escapedWord})(?=[\\s.,!?;:]|$)`
+  const pattern = `(^|[^\\p{L}]|<br\\s*/?>)(${escapedWord})(?=[\\s.,!?;:]|<br\\s*/?>|$)`
   return new RegExp(pattern, 'giu')
 }
 
@@ -33,9 +39,7 @@ export const copyWordsToClipboard = (wordsArray, text, found) => {
   })
   if (wordsToReturn.length > 0) {
     navigator.clipboard.writeText(wordsToReturn.join('\n')).then(() => {
-      alert('Слова скопированы в буфер обмена!')
+      alert('Copied to clipboard')
     })
-  } else {
-    alert('Нет слов для копирования!')
   }
 }
