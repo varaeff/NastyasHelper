@@ -43,8 +43,7 @@ const saveEditWord = () => {
 const selectWordsInText = (word) => {
   selectedWord.value = word
   selectedNum.value = 1
-  const escapedWord = escapeRegExp(word.trim())
-  const regex = new RegExp(`(^|[^\\p{L}])(${escapedWord})(?=[\\s.,!?;:]|$|<br>)`, 'giu')
+  const regex = getRegExp(word)
 
   const matches = text.value.replace(/\n/g, '<br>').match(regex) || []
   foundCount.value = matches.length
@@ -193,7 +192,7 @@ const filteredWords = computed(() => {
   </main>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 header {
   font-size: 1.5rem;
   font-weight: bold;
@@ -220,9 +219,9 @@ textarea {
   margin: 10px;
   padding: 10px;
   resize: none;
-  border: 1px solid #ccc;
+  border: 1px solid $border-color;
   border-radius: 10px;
-  background-color: #fff;
+  background-color: $background-text;
 }
 
 .result {
@@ -237,53 +236,50 @@ textarea {
   padding-bottom: 20px;
 }
 
-.interactive-text {
-  width: 63%;
+.interactive-text,
+.words {
   padding: 10px;
   text-align: left;
-  border: 1px solid #ccc;
+  border: 1px solid $border-color;
   border-radius: 10px;
-  background-color: #fff;
+  background-color: $background-text;
   max-height: 300px;
   overflow-y: auto;
+}
+
+.interactive-text {
+  width: 63%;
 }
 
 .words {
   width: 35%;
-  text-align: left;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 10px;
-  background-color: #fff;
-  max-height: 300px;
-  overflow-y: auto;
-}
 
-.words-label {
-  background-color: #fff;
-  margin-bottom: 10px;
+  &-label {
+    background-color: $background-text;
+    margin-bottom: 10px;
+  }
+
+  &_list {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    height: 1.2rem;
+    background-color: $background-text;
+  }
 }
 
 .word {
   cursor: pointer;
-  background-color: #fff;
-}
+  background-color: $background-text;
 
-.word:hover {
-  font-weight: bold;
-}
+  &:hover {
+    font-weight: bold;
+  }
 
-.word.selected {
-  background-color: #ffe066;
-  font-weight: bold;
-}
-
-.words_list {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  height: 1.2rem;
-  background-color: #fff;
+  &.selected {
+    background-color: #ffe066;
+    font-weight: bold;
+  }
 }
 
 ::v-deep(.highlight) {
@@ -302,21 +298,23 @@ button {
   border: none;
   border-radius: 5px;
   background-color: #007bff;
-  color: white;
+  color: $background-text;
   cursor: pointer;
   margin-bottom: 20px;
-}
 
-button:hover {
-  background-color: #0056b3;
-  box-shadow: 4px 4px 8px 0 rgba(0, 123, 255, 0.5);
-}
-button:active {
-  background-color: #004085;
-  box-shadow: none;
-}
-button:focus {
-  outline: none;
+  &:hover {
+    background-color: #0056b3;
+    box-shadow: 4px 4px 8px 0 rgba(0, 123, 255, 0.5);
+  }
+
+  &:active {
+    background-color: #004085;
+    box-shadow: none;
+  }
+
+  &:focus {
+    outline: none;
+  }
 }
 
 .margin {
@@ -328,12 +326,12 @@ button:focus {
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  background-color: #fff;
+  background-color: $background-text;
 }
 
 .counter {
   margin-right: 5px;
-  background-color: #fff;
+  background-color: $background-text;
 }
 
 .inline_button {
@@ -346,10 +344,10 @@ button:focus {
   padding: 2px 10px;
   border-radius: 5px;
   cursor: pointer;
-}
 
-.inline_button:hover {
-  color: #fff;
+  &:hover {
+    color: $background-text;
+  }
 }
 
 .filter {
@@ -357,11 +355,11 @@ button:focus {
   flex-direction: column;
   align-items: flex-start;
   margin-bottom: 10px;
-  background-color: #fff;
+  background-color: $background-text;
 }
 
 .label {
-  background-color: #fff;
+  background-color: $background-text;
 }
 
 .modal-overlay {
@@ -378,32 +376,32 @@ button:focus {
 }
 
 .modal {
-  background: #fff;
+  background: $background-text;
   padding: 24px 32px;
   border-radius: 10px;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
   min-width: 300px;
   text-align: center;
-}
 
-.modal-element {
-  margin-bottom: 10px;
-  background-color: #fff;
-}
+  &-element {
+    margin-bottom: 10px;
+    background-color: $background-text;
+  }
 
-.modal-input {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  background-color: #fff;
-}
+  &-input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid $border-color;
+    border-radius: 5px;
+    background-color: $background-text;
+  }
 
-.modal-buttons {
-  margin-top: 16px;
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-  background: #fff;
+  &-buttons {
+    margin-top: 16px;
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    background: $background-text;
+  }
 }
 </style>
