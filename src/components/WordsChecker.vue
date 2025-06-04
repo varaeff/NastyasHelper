@@ -1,8 +1,10 @@
 <script setup>
 import { ref, computed, watch, nextTick } from 'vue'
-import { checkWords, escapeRegExp, getRegExp, copyWordsToClipboard } from '@/utils'
+import { checkWords, getRegExp, copyWordsToClipboard } from '@/utils'
+import HelpIcon from '@/components/HelpIcon.vue'
 
 const workType = ref('text')
+const isHelpModalOpen = ref(false)
 
 const text = ref('')
 const words = ref('')
@@ -215,6 +217,7 @@ const filteredWords = computed(() => {
           v-model="editWordValue"
           @input="checkEditWordFound"
           @keyup.enter="saveEditWord"
+          @keyup.escape="[isEditModalOpen, editWordIndex, editWordValue] = [false, null, '']"
           autofocus
         />
         <div class="modal-element" :style="{ color: editWordFound ? 'green' : 'red' }">
@@ -228,7 +231,22 @@ const filteredWords = computed(() => {
         </div>
       </div>
     </div>
+
+    <div v-if="isHelpModalOpen" class="modal-overlay">
+      <div class="modal">
+        <h3 class="modal-element">Help</h3>
+        <p class="modal-element">
+          This tool allows you to check a text or a list of words against a glossary or core
+          vocabulary. You can edit words in the list and see their occurrences in the text.
+        </p>
+        <div class="modal-buttons">
+          <button @click="isHelpModalOpen = false">Close</button>
+        </div>
+      </div>
+    </div>
   </main>
+
+  <HelpIcon class="help-icon" @click="isHelpModalOpen = true" />
 </template>
 
 <style lang="scss" scoped>
@@ -438,6 +456,7 @@ button {
   border-radius: 10px;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
   min-width: 300px;
+  max-width: 80%;
   text-align: center;
 
   &-element {
@@ -459,6 +478,22 @@ button {
     gap: 12px;
     justify-content: center;
     background: $background-text;
+  }
+}
+
+.help-icon {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  cursor: pointer;
+  z-index: 1000;
+
+  &:hover {
+    fill: #007bff;
+  }
+
+  &:active {
+    fill: #0056b3;
   }
 }
 </style>
