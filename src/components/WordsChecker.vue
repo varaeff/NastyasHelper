@@ -2,6 +2,7 @@
 import { ref, computed, watch, nextTick } from 'vue'
 import { checkWords, getRegExp, copyWordsToClipboard } from '@/utils'
 import HelpIcon from '@/components/HelpIcon.vue'
+import { helpText } from '@/utils/helpText.js'
 
 const workType = ref('text')
 const isHelpModalOpen = ref(false)
@@ -234,11 +235,8 @@ const filteredWords = computed(() => {
 
     <div v-if="isHelpModalOpen" class="modal-overlay">
       <div class="modal">
-        <h3 class="modal-element">Help</h3>
-        <p class="modal-element">
-          This tool allows you to check a text or a list of words against a glossary or core
-          vocabulary. You can edit words in the list and see their occurrences in the text.
-        </p>
+        <h3 class="modal-text">Help</h3>
+        <div class="help-text" v-html="helpText"></div>
         <div class="modal-buttons">
           <button @click="isHelpModalOpen = false">Close</button>
         </div>
@@ -494,6 +492,24 @@ button {
 
   &:active {
     fill: #0056b3;
+  }
+}
+
+.modal-text {
+  margin-bottom: 1rem;
+  background-color: $background-text;
+}
+
+.help-text {
+  text-align: left;
+  background-color: $background-text;
+
+  ::v-deep(b) {
+    background-color: inherit;
+  }
+
+  ::v-deep(i) {
+    background-color: inherit;
   }
 }
 </style>
